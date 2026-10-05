@@ -57,12 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Si la BDD est vide, créer des zones par défaut
         if (maps.length === 0) {
             maps = [
-                { id: 1, name: 'Hightree Steep', image: 'maps/Hightree Steep.jpg' },
-                { id: 2, name: 'MAP 2', image: 'maps/map2.webp' },
-                { id: 3, name: 'MAP 3', image: 'maps/map3.webp' },
-                { id: 4, name: 'MAP 4', image: 'maps/map4.webp' },
-                { id: 5, name: 'MAP 5', image: 'maps/map5.webp' },
-                { id: 6, name: 'MAP 6', image: 'maps/map6.webp' }
+                { id: 1, name: 'N Steep', image: 'maps/N Steep.jpg' },
+                { id: 2, name: 'NE Precipice', image: 'maps/NE Precipice.jpg' },
+                { id: 3, name: 'E Grove', image: 'maps/E Grove.jpg' },
+                { id: 4, name: 'SE Dale', image: 'maps/SE Dale.jpg' },
+                { id: 5, name: 'S Glade', image: 'maps/S Glade.jpg' },
+                { id: 6, name: 'SW Enclave', image: 'maps/SW Enclave.jpg' },
+                { id: 6, name: 'W Strand', image: 'maps/W Strand.jpg' },
+                { id: 6, name: 'NW Lake', image: 'maps/NW Lake.jpg' }
             ];
         }
 
