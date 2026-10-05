@@ -2,7 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = 'https://tmphejgbudtvsssiihkm.supabase.co';
-const SUPABASE_ANON_KEY = 'TA_PUBLISHABLE_KEY_ICI';
+const SUPABASE_ANON_KEY = 'TA_PUBLISHABLE_KEY_ICI'; // ⚠️ remplace par ta vraie clé
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -41,4 +41,14 @@ export async function updateSpotPosition(spotId, x, y) {
         .eq('id', spotId)
         .select()
         .single();
-    if (error) throw
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteSpot(spotId) {
+    const { error } = await supabaseClient
+        .from('spots')
+        .delete()
+        .eq('id', spotId);
+    if (error) throw error;
+}
