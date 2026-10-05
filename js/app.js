@@ -1,54 +1,67 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    const recipeForm = document.getElementById('recipe-form');
-    const recipesContainer = document.getElementById('recipes-container');
+document.addEventListener('DOMContentLoaded', () => {
+    const mapImg = document.getElementById('albion-map-img');
+    const mapContainer = document.getElementById('albion-map-container');
+    const markersLayer = document.getElementById('markers-layer');
+    const mapSelect = document.getElementById('map-select');
+    const markerTitleInput = document.getElementById('marker-title');
+    const markerTypeSelect = document.getElementById('marker-type');
+    
+    // Preset des maps Albion
+    const mapUrls = {
+        martlock: "https://render.albiononline.com/v1/map/Martlock.png",
+        bridgewatch: "https://render.albiononline.com/v1/map/Bridgewatch.png",
+        lymhurst: "https://render.albiononline.com/v1/map/Lymhurst.png",
+        fortsterling: "https://render.albiononline.com/v1/map/FortSterling.png",
+        thetford: "https://render.albiononline.com/v1/map/Thetford.png"
+    };
 
-    // Charger et afficher les recettes
-    async function loadRecipes() {
-        recipesContainer.innerHTML = '<p>Chargement des recettes...</p>';
-        const recipes = await getRecipes();
-        
-        if (recipes.length === 0) {
-            recipesContainer.innerHTML = '<p>Aucune recette pour le moment. Ajoutez-en une !</p>';
-            return;
+    // Changer d'image de map
+    mapSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (mapUrls[val]) {
+            mapImg.src = mapUrls[val];
         }
+    });
 
-        recipesContainer.innerHTML = recipes.map(recipe => `
-            <div class="recipe-card">
-                <h3>${escapeHtml(recipe.title)}</h3>
-                <p><strong>Ingrédients :</strong> ${escapeHtml(recipe.ingredients)}</p>
-                <p><strong>Instructions :</strong> ${escapeHtml(recipe.instructions)}</p>
-                ${recipe.prep_time ? `<p><small>⏱ Temps de préparation : ${recipe.prep_time} min</small></p>` : ''}
-            </div>
-        `).join('');
-    }
+    // Clic sur l'image pour placer un marqueur
+    mapContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('marker-pin')) return; // Éviter de dédoubler sur un marqueur
 
-    // Gestion de la soumission du formulaire
-    if (recipeForm) {
-        recipeForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const newRecipe = {
-                title: document.getElementById('title').value,
-                ingredients: document.getElementById('ingredients').value,
-                instructions: document.getElementById('instructions').value,
-                prep_time: parseInt(document.getElementById('prep_time').value) || null
-            };
+        const rect = mapImg.getBoundingClientRect();
+        // Calcul du pourcentage relatif sur l'image
+        const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
 
-            const result = await addRecipe(newRecipe);
-            if (result) {
-                recipeForm.reset();
-                await loadRecipes();
-            } else {
-                alert('Erreur lors de l\'enregistrement de la recette.');
+        const title = markerTitleInput.value.trim() || 'Marqueur';
+        const type = markerTypeSelect.value;
+
+        addMarkerToMap(xPercent, yPercent, title, type);
+    });
+
+    function addMarkerToMap(x, y, title, type) {
+        const pin = document.createElement('div');
+        pin.className = `marker-pin ${type}`;
+        pin.style.left = `${x}%`;
+        pin.style.top = `${y}%`;
+        pin.title = `${title} (${type})`;
+        
+        // Icônes simples selon le type
+        const icons = {
+            resource: '🌾',
+            chest: '🎁',
+            boss: '💀',
+            hideout: '🏰',
+            other: '📌'
+        };
+        pin.innerText = icons[type] || '📌';
+
+        // Supprimer au clic droit ou double clic
+        pin.addEventListener('dblclick', () => {
+            if (confirm(`Supprimer le marqueur "${title}" ?`)) {
+                pin.remove();
             }
         });
-    }
 
-    // Sécurité XSS simple
-    function escapeHtml(str) {
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        markersLayer.appendChild(pin);
     }
-
-    // Premier chargement
-    loadRecipes();
 });
