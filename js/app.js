@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Si la BDD est vide, créer des zones par défaut
         if (maps.length === 0) {
             maps = [
-                { id: 1, name: 'PRECIPICE', image: 'maps/precipice.webp' },
+                { id: 1, name: 'Hightree Steep', image: 'maps/Hightree Steep.jpg' },
                 { id: 2, name: 'MAP 2', image: 'maps/map2.webp' },
                 { id: 3, name: 'MAP 3', image: 'maps/map3.webp' },
                 { id: 4, name: 'MAP 4', image: 'maps/map4.webp' },
