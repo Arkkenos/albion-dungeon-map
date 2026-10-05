@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Albion Dungeon Map</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ÉCRAN DE CONNEXION -->
+  <div id="auth-screen" class="screen active">
+    <div class="auth-box">
+      <h1>ALBION DUNGEON MAP</h1>
+      <form id="login-form">
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" autocomplete="current-password" required placeholder="••••••••">
+        <button type="submit" class="btn btn-primary">CONNEXION</button>
+      </form>
+      <p id="auth-error" class="error-msg"></p>
+    </div>
+  </div>
+
+  <!-- PAGE D'ACCUEIL : LISTE DES MAPS -->
+  <div id="home-screen" class="screen">
+    <header class="main-header">
+      <h1>ALBION DUNGEON MAP</h1>
+      <button id="logout-btn" class="btn btn-secondary">Déconnexion</button>
+    </header>
+    <main class="container">
+      <h2>Choisir une zone :</h2>
+      <div id="maps-grid" class="maps-grid"></div>
+    </main>
+  </div>
+
+  <!-- PAGE DE LA CARTE -->
+  <div id="map-screen" class="screen">
+    <header class="map-header">
+      <button id="back-btn" class="btn btn-secondary">← MAPS</button>
+      <h2 id="current-map-title">PRECIPICE</h2>
+      <div class="mode-toggle">
+        <button id="mode-consult-btn" class="btn mode-btn active">CONSULTATION</button>
+        <button id="mode-edit-btn" class="btn mode-btn">MODIFICATION</button>
+      </div>
+    </header>
+
+    <main class="map-container">
+      <div id="map-wrapper" class="map-wrapper">
+        <img id="map-image" src="" alt="Carte Albion" draggable="false">
+        <div id="spots-layer" class="spots-layer"></div>
+      </div>
+      <div id="spots-counter" class="spots-counter">0 SPOTS CONNUS</div>
+    </main>
+  </div>
+
+  <!-- MODALE DE SUPPRESSION -->
+  <div id="confirm-modal" class="modal">
+    <div class="modal-content">
+      <h3>Supprimer cet emplacement ?</h3>
+      <div class="modal-actions">
+        <button id="cancel-delete-btn" class="btn btn-secondary">ANNULER</button>
+        <button id="confirm-delete-btn" class="btn btn-danger">SUPPRIMER</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
