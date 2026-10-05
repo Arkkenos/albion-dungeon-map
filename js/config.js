@@ -1,5 +1,5 @@
-const SUPABASE_URL = "https://tmphejgbudtvsssiihkm.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable__LRvhwJmwbtFjAgOZSfsgg_4oPLBiQ6";
+const SUPABASE_URL = 'https://lrvhwjmwbtfjagozsfsgg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable__LRvhwJmwbtFjAgOZSfsgg_4oPLBiQ6';
 
-// Initialisation de la connexion Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// On utilise supabaseClient pour éviter tout conflit de variable avec le CDN Supabase
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
