@@ -1,58 +1,44 @@
-// Récupérer toutes les cartes
-async function getMaps() {
+// db.js
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://tmphejgbudtvsssiihkm.supabase.co';
+const SUPABASE_ANON_KEY = 'TA_PUBLISHABLE_KEY_ICI';
+
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export async function getMaps() {
     const { data, error } = await supabaseClient
         .from('maps')
-        .select('*');
-    
-    if (error) {
-        console.error('Erreur lors de la récupération des cartes:', error);
-        return [];
-    }
+        .select('*')
+        .order('id');
+    if (error) throw error;
     return data;
 }
 
-// Récupérer les spots d'une carte spécifique
-async function getSpotsByMapId(mapId) {
+export async function getSpotsByMap(mapId) {
     const { data, error } = await supabaseClient
         .from('spots')
         .select('*')
         .eq('map_id', mapId);
-
-    if (error) {
-        console.error('Erreur lors de la récupération des spots:', error);
-        return [];
-    }
+    if (error) throw error;
     return data;
 }
 
-// Ajouter un spot
-async function addSpot(mapId, x, y) {
+export async function addSpot(mapId, x, y) {
     const { data, error } = await supabaseClient
         .from('spots')
-        .insert([{ map_id: mapId, x: x, y: y }])
-        .select();
-
-    if (error) console.error('Erreur lors de l\'ajout du spot:', error);
+        .insert({ map_id: Number(mapId), x: Number(x), y: Number(y) })
+        .select()
+        .single();
+    if (error) throw error;
     return data;
 }
 
-// Mettre à jour la position d'un spot (Drag & Drop)
-async function updateSpotPosition(spotId, x, y) {
+export async function updateSpotPosition(spotId, x, y) {
     const { data, error } = await supabaseClient
         .from('spots')
-        .update({ x: x, y: y })
-        .eq('id', spotId);
-
-    if (error) console.error('Erreur lors de la mise à jour:', error);
-    return data;
-}
-
-// Supprimer un spot
-async function deleteSpot(spotId) {
-    const { error } = await supabaseClient
-        .from('spots')
-        .delete()
-        .eq('id', spotId);
-
-    if (error) console.error('Erreur lors de la suppression:', error);
-}
+        .update({ x: Number(x), y: Number(y) })
+        .eq('id', spotId)
+        .select()
+        .single();
+    if (error) throw
