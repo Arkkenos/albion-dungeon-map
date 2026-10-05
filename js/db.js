@@ -2,7 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = 'https://tmphejgbudtvsssiihkm.supabase.co';
-const SUPABASE_ANON_KEY = 'TA_PUBLISHABLE_KEY_ICI'; // ⚠️ remplace par ta vraie clé
+const SUPABASE_ANON_KEY = 'sb_publishable__LRvhwJmwbtFjAgOZSfsgg_4oPLBiQ6'; // ⚠️ remplace par ta vraie clé
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
