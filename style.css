@@ -2,122 +2,281 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-    background-color: #12181f;
-    color: #e0e6ed;
-}
-
-header {
-    background-color: #1b2430;
-    padding: 1rem 2rem;
-    border-bottom: 2px solid #2c3e50;
-    text-align: center;
-}
-
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.controls {
-    flex: 1;
-    min-width: 300px;
-    background: #1b2430;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-select, input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #3a4d62;
-    background: #0f141c;
-    color: #fff;
-    margin-bottom: 10px;
-}
-
-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #3182ce;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-button:disabled {
-    background-color: #4a5568;
-    cursor: not-allowed;
-}
-
-.map-section {
-    flex: 2;
-    min-width: 500px;
-    display: flex;
-    justify-content: center;
-}
-
-.map-container {
-    position: relative;
-    display: inline-block;
-    border: 3px solid #2c3e50;
-    border-radius: 8px;
-    overflow: hidden;
-    max-width: 100%;
-}
-
-.map-container img {
-    display: block;
-    max-width: 100%;
-    height: auto;
+    font-family: 'Cinzel', 'Segoe UI', serif;
     user-select: none;
 }
 
-/* Style des marqueurs sur la carte */
-.marker-pin {
+body {
+    background-color: #0b0e14;
+    color: #d1d5db;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Écran de Connexion */
+#login-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: radial-gradient(circle, #1a2332 0%, #0b0e14 100%);
+}
+
+.login-box {
+    background: #151c28;
+    border: 2px solid #3b485d;
+    padding: 2.5rem;
+    border-radius: 8px;
+    width: 380px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+}
+
+.login-box h1 {
+    color: #e2b755;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+}
+
+.login-box p {
+    color: #8c9ba5;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #ccd6e0;
+}
+
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    background: #0b0e14;
+    border: 1px solid #3b485d;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+}
+
+input[type="password"]:focus {
+    border-color: #e2b755;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+#login-btn {
+    width: 100%;
+    padding: 12px;
+    background: #e2b755;
+    color: #0b0e14;
+    font-size: 1rem;
+}
+
+#login-btn:hover {
+    background: #f3ca69;
+}
+
+.error-msg {
+    color: #e53e3e;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+}
+
+/* Header principal & Liste des Maps */
+header {
+    background: #151c28;
+    padding: 1rem 2rem;
+    border-bottom: 2px solid #283548;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    color: #e2b755;
+    font-size: 1.4rem;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.container h2 {
+    margin-bottom: 1.5rem;
+    color: #93a4b5;
+    font-weight: normal;
+}
+
+.maps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.map-card {
+    background: #151c28;
+    border: 1px solid #283548;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.map-card:hover {
+    transform: translateY(-4px);
+    border-color: #e2b755;
+}
+
+.map-card h3 {
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+/* Vue Détail de la Map */
+.map-header {
+    background: #151c28;
+    padding: 0.8rem 1.5rem;
+}
+
+.btn-back {
+    background: #283548;
+    color: #fff;
+    padding: 8px 16px;
+}
+
+.btn-back:hover {
+    background: #3b485d;
+}
+
+.map-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.map-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 90vw;
+    max-height: 75vh;
+    border: 3px solid #283548;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #000;
+}
+
+.map-wrapper img {
+    display: block;
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+}
+
+/* Modes Consultation / Modification */
+.btn-mode {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.mode-consultation {
+    background: #2b6cb0;
+    color: white;
+}
+
+.mode-modification {
+    background: #c53030;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+/* Représentation des Portails */
+.dungeon-spot {
     position: absolute;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
+    background: radial-gradient(circle, #b794f4 0%, #6b46c1 70%, #44337a 100%);
+    border: 2px solid #e9d8fd;
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    border: 2px solid white;
-    box-shadow: 0 0 5px rgba(0,0,0,0.8);
-    cursor: pointer;
-    transition: transform 0.2s;
+    box-shadow: 0 0 10px #9f7aea, inset 0 0 5px #fff;
+    cursor: default;
+    transition: transform 0.15s ease;
 }
 
-.marker-pin:hover {
+.mode-modification-active .dungeon-spot {
+    cursor: grab;
+}
+
+.dungeon-spot:hover {
     transform: translate(-50%, -50%) scale(1.3);
-    z-index: 10;
+    box-shadow: 0 0 15px #b794f4, inset 0 0 8px #fff;
 }
 
-.marker-pin.resource { background-color: #48bb78; }
-.marker-pin.chest { background-color: #ecc94b; }
-.marker-pin.boss { background-color: #f56565; }
-.marker-pin.hideout { background-color: #9f7aea; }
-.marker-pin.other { background-color: #4299e1; }
+.map-footer {
+    margin-top: 1rem;
+    font-weight: bold;
+    color: #e2b755;
+    letter-spacing: 1px;
+}
+
+/* Modale de confirmation */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #151c28;
+    border: 2px solid #283548;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.modal-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-secondary { background: #4a5568; color: white; padding: 10px 20px; }
+.btn-danger { background: #e53e3e; color: white; padding: 10px 20px; }
