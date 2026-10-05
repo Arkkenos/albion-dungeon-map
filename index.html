@@ -3,60 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Albion Map Planner</title>
+    <title>Albion Dungeon Map</title>
     <link rel="stylesheet" href="style.css">
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <header>
-        <h1>⚔️ Albion Online - Carte & Marqueurs</h1>
-    </header>
+    <!-- Ecran de connexion par mot de passe -->
+    <div id="login-screen" class="screen">
+        <div class="login-box">
+            <h1>ALBION DUNGEON MAP</h1>
+            <p>Accès réservé aux membres de l'escouade</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="password">Mot de passe :</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" id="login-btn">CONNEXION</button>
+            </form>
+            <p id="login-error" class="error-msg"></p>
+        </div>
+    </div>
 
-    <main class="container">
-        <!-- Contrôles et Choix de Map -->
-        <section class="controls">
-            <div class="form-group">
-                <label for="map-select">Choisir une zone / map :</label>
-                <select id="map-select">
-                    <option value="martlock">Martlock Region</option>
-                    <option value="bridgewatch">Bridgewatch Region</option>
-                    <option value="lymhurst">Lymhurst Region</option>
-                    <option value="fortsterling">Fort Sterling Region</option>
-                    <option value="thetford">Thetford Region</option>
-                    <option value="custom">Map Personnalisée (URL)</option>
-                </select>
-            </div>
+    <!-- Interface Principale (Masquée avant connexion) -->
+    <div id="app-screen" class="screen hidden">
+        
+        <!-- Vue 1: Liste des Maps -->
+        <div id="maps-list-view" class="view">
+            <header>
+                <h1>ALBION DUNGEON MAP</h1>
+                <button id="logout-btn" class="btn-secondary">Déconnexion</button>
+            </header>
+            <main class="container">
+                <h2>Choisir une zone :</h2>
+                <div id="maps-grid" class="maps-grid">
+                    <!-- Généré dynamiquement en JS -->
+                </div>
+            </main>
+        </div>
 
-            <div class="form-group" id="custom-url-group" style="display:none;">
-                <label for="custom-map-url">URL de l'image de la map :</label>
-                <input type="text" id="custom-map-url" placeholder="https://example.com/map.png">
-            </div>
+        <!-- Vue 2: Affichage d'une Map -->
+        <div id="map-detail-view" class="view hidden">
+            <header class="map-header">
+                <button id="back-to-maps-btn" class="btn-back">← MAPS</button>
+                <h2 id="current-map-title">PRECIPICE</h2>
+                <div class="mode-toggle-container">
+                    <button id="mode-btn" class="btn-mode mode-consultation">MODE CONSULTATION</button>
+                </div>
+            </header>
 
-            <div class="marker-form">
-                <h3>Ajouter un marqueur</h3>
-                <p><small>Cliquez sur la carte pour choisir la position, ou remplissez les infos :</small></p>
-                <input type="text" id="marker-title" placeholder="Titre (ex: Gisement T6, Boss, etc.)">
-                <select id="marker-type">
-                    <option value="resource">🌾 Ressource / Minerai</option>
-                    <option value="chest">🎁 Coffre / Trésor</option>
-                    <option value="boss">💀 Boss / Mob Dangeureux</option>
-                    <option value="hideout">🏰 Hideout / Abri</option>
-                    <option value="other">📌 Autre / Repère</option>
-                </select>
-                <button id="add-marker-btn" disabled>Cliquer sur la carte pour placer</button>
-            </div>
-        </section>
+            <main class="map-main">
+                <div id="map-wrapper" class="map-wrapper">
+                    <img id="map-image" src="" alt="Carte de zone" draggable="false">
+                    <div id="spots-layer"></div>
+                </div>
+                <footer class="map-footer">
+                    <span id="spots-count">0 SPOTS CONNUS</span>
+                </footer>
+            </main>
+        </div>
 
-        <!-- Affichage de la carte d'Albion -->
-        <section class="map-section">
-            <div id="albion-map-container" class="map-container">
-                <img id="albion-map-img" src="https://render.albiononline.com/v1/map/Martlock.png" alt="Carte Albion">
-                <div id="markers-layer"></div>
+    </div>
+
+    <!-- Dialogue de confirmation de suppression -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Supprimer cet emplacement ?</h3>
+            <div class="modal-actions">
+                <button id="cancel-delete-btn" class="btn-secondary">ANNULER</button>
+                <button id="confirm-delete-btn" class="btn-danger">SUPPRIMER</button>
             </div>
-        </section>
-    </main>
+        </div>
+    </div>
 
     <script src="js/config.js"></script>
     <script src="js/db.js"></script>
