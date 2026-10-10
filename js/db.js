@@ -35,3 +35,17 @@ export async function updateSpotTimer(spotId, respawnTimestamp) {
     if (error) throw error;
     return data;
 }
+
+export async function updateSpotNatural(spotId, naturalUntilMs) {
+    const { data, error } = await supabaseClient
+        .from('spots')
+        .update({ natural_until: naturalUntilMs })
+        .eq('id', spotId)
+        .select();
+
+    if (error) {
+        console.error('Erreur updateSpotNatural:', error);
+        throw error;
+    }
+    return data;
+}
