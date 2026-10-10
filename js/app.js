@@ -173,24 +173,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clic sur un spot pour lancer un timer de 1 min 30 (90 secondes)
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const now = Date.now();
-                const respawnTime = now + 90 * 1000; // 90 secondes
+                // On utilise explicitement les secondes (Math.floor(Date.now() / 1000)) pour éviter les conflits de format
+                const nowSec = Math.floor(Date.now() / 1000);
+                const respawnTimeSec = nowSec + 90; // 90 secondes plus tard
 
                 try {
-                    // 1. Enregistrement dans Supabase
-                    await updateSpotTimer(spot.id, respawnTime);
-                    
-                    // 2. Mise à jour locale immédiate
-                    spot.respawn_at = respawnTime;
-                    
-                    // 3. Affichage instantané du timer sur le point
-                    const label = elem.querySelector('.spot-timer-label');
-                    const remainingSeconds = 90;
-                    const mins = Math.floor(remainingSeconds / 60);
-                    const secs = remainingSeconds % 60;
-                    label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                    label.classList.remove('hidden');
-                    elem.classList.add('on-cooldown');
+                    await updateSpotTimer(spot.id, respawnTimeSec);
+                    spot.respawn_at = respawnTimeSec;
+                    updateSingleSpotDisplay(spot, elem);
                 } catch (err) {
                     console.error('Erreur lors du lancement du timer:', err);
                 }
@@ -202,28 +192,33 @@ document.addEventListener('DOMContentLoaded', () => {
         startGlobalTimerLoop();
     }
 
-    // Boucle globale pour actualiser l'affichage des timers visuels
+    // Fonction pour mettre à jour l'affichage d'un spot individuel
+    function updateSingleSpotDisplay(spot, elem) {
+        const label = elem.querySelector('.spot-timer-label');
+        const nowSec = Math.floor(Date.now() / 1000);
+
+        if (spot.respawn_at && Number(spot.respawn_at) > nowSec) {
+            const remainingSeconds = Number(spot.respawn_at) - nowSec;
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            label.classList.remove('hidden');
+            elem.classList.add('on-cooldown');
+        } else {
+            label.classList.add('hidden');
+            elem.classList.remove('on-cooldown');
+        }
+    }
+
+    // Boucle globale pour actualiser l'affichage de tous les timers en direct chaque seconde
     function startGlobalTimerLoop() {
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
-            const now = Date.now();
             spotsData.forEach(spot => {
                 const elem = spotsLayer.querySelector(`[data-id='${spot.id}']`);
                 if (!elem) return;
-                const label = elem.querySelector('.spot-timer-label');
-
-                if (spot.respawn_at && spot.respawn_at > now) {
-                    const remainingSeconds = Math.ceil((spot.respawn_at - now) / 1000);
-                    const mins = Math.floor(remainingSeconds / 60);
-                    const secs = remainingSeconds % 60;
-                    label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                    label.classList.remove('hidden');
-                    elem.classList.add('on-cooldown');
-                } else {
-                    label.classList.add('hidden');
-                    elem.classList.remove('on-cooldown');
-                }
+                updateSingleSpotDisplay(spot, elem);
             });
         }, 1000);
     }
@@ -247,6 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const index = spotsData.findIndex(s => s.id === updatedSpot.id);
                     if (index !== -1) {
                         spotsData[index] = updatedSpot;
+                        // Met à jour l'affichage immédiatement si l'élément est présent
+                        const elem = spotsLayer.querySelector(`[data-id='${updatedSpot.id}']`);
+                        if (elem) {
+                            updateSingleSpotDisplay(updatedSpot, elem);
+                        }
                     }
                 }
             )
