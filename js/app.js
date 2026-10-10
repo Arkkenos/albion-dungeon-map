@@ -170,10 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
             timerLabel.className = 'spot-timer-label hidden';
             elem.appendChild(timerLabel);
 
-            // Clic sur un spot pour lancer un timer exact de 90 secondes (1m30)
+            // Clic sur un spot pour lancer un timer exact de 90 secondes (90000 ms)
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const respawnTimeMs = Date.now() + (90 * 1000);
+                const respawnTimeMs = Date.now() + 90000;
 
                 try {
                     await updateSpotTimer(spot.id, respawnTimeMs);
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Met à jour tous les spots en cherchant directement dans les éléments du DOM (évite le bug des UUIDs chiffrés)
+    // Met à jour tous les spots
     function updateAllSpotsDisplay() {
         spotsData.forEach(spot => {
             const elem = Array.from(spotsLayer.children).find(el => el.dataset.id === String(spot.id));
@@ -221,11 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Boucle globale pour décompter chaque seconde en direct live
+    // Boucle globale de vérification
     function startGlobalTimerLoop() {
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
+            console.log("Boucle timer active, vérification des points..."); // <-- Regarde si ça s'affiche dans ta console F12 chaque seconde
             updateAllSpotsDisplay();
         }, 1000);
     }
