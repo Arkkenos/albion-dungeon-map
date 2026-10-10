@@ -2,6 +2,7 @@ import {
     getMaps,
     getSpotsByMap,
     updateSpotTimer,
+    updateSpotNatural, // Import de la nouvelle fonction
     supabaseClient
 } from './db.js';
 
@@ -38,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentZoom = 1;
     let spotsData = [];
     let realtimeChannel = null;
-    let activeIntervals = []; // Stocke les timers de chaque point pour les nettoyer si besoin
+    let activeIntervals = [];
 
     // 1. Authentification Simple
     loginForm.addEventListener('submit', (e) => {
@@ -146,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mapWrapper.style.transform = `scale(${currentZoom})`;
     }
 
-    // Nettoyage des intervalles lors du changement de page
     function cleanupMap() {
         leaveRealtimeChannel();
         activeIntervals.forEach(interval => clearInterval(interval));
@@ -180,11 +180,13 @@ document.addEventListener('DOMContentLoaded', () => {
             timerLabel.className = 'spot-timer-label hidden';
             elem.appendChild(timerLabel);
 
-            // Fonction pour mettre à jour ce spot précis chaque seconde
+            // Met à jour l'affichage selon le timer 90s (cooldown) ou natural_until (rouge / 3h)
             const updateSpotState = () => {
                 const now = Date.now();
                 const respawnAt = Number(spot.respawn_at);
+                const naturalUntil = Number(spot.natural_until);
 
+                // Priorité 1 : Le timer classique de 90s (en cours de reset)
                 if (respawnAt && respawnAt > now) {
                     const remainingMs = respawnAt - now;
                     const remainingSeconds = Math.ceil(remainingMs / 1000);
@@ -192,31 +194,58 @@ document.addEventListener('DOMContentLoaded', () => {
                     const secs = remainingSeconds % 60;
                     timerLabel.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
                     timerLabel.classList.remove('hidden');
+                    elem.classList.remove('natural-spawn');
                     elem.classList.add('on-cooldown');
-                } else {
+                } 
+                // Priorité 2 : Le spawn naturel (Marqué en ROUGE pour 3h)
+                else if (naturalUntil && naturalUntil > now) {
+                    timerLabel.innerText = "NATUREL"; // Ou vide, selon préférence
+                    timerLabel.classList.remove('hidden');
+                    elem.classList.remove('on-cooldown');
+                    elem.classList.add('natural-spawn');
+                } 
+                // Sinon : Disponible normal
+                else {
                     timerLabel.classList.add('hidden');
                     elem.classList.remove('on-cooldown');
+                    elem.classList.remove('natural-spawn');
                 }
             };
 
-            // Lancer l'actualisation immédiate pour ce spot
             updateSpotState();
-
-            // Créer une mini-boucle indépendante pour ce spot
             const spotInterval = setInterval(updateSpotState, 1000);
             activeIntervals.push(spotInterval);
 
-            // Clic sur un spot pour lancer un timer de 90 secondes (90000 ms)
+            // Clic gauche : Lance le timer classique de 90 secondes
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const respawnTimeMs = Date.now() + 90000;
+                const respawnTimeMs = Date.now() + 90000; // 90 secondes
 
                 try {
                     await updateSpotTimer(spot.id, respawnTimeMs);
                     spot.respawn_at = respawnTimeMs;
-                    updateSpotState(); // Met à jour tout de suite au clic
+                    spot.natural_until = null; // On annule le naturel si on clique en normal
+                    updateSpotState();
                 } catch (err) {
-                    console.error('Erreur lors du lancement du timer:', err);
+                    console.error('Erreur timer 90s:', err);
+                }
+            });
+
+            // Clic droit : Marque le donjon comme "Spawn Naturel" (Rouge pour 3 heures)
+            elem.addEventListener('contextmenu', async (e) => {
+                e.preventDefault(); // Empêche le menu contextuel du navigateur
+                e.stopPropagation();
+                
+                const threeHoursMs = 3 * 60 * 60 * 1000; // 3 heures en millisecondes
+                const naturalTimeMs = Date.now() + threeHoursMs;
+
+                try {
+                    await updateSpotNatural(spot.id, naturalTimeMs);
+                    spot.natural_until = naturalTimeMs;
+                    spot.respawn_at = null; // On annule le timer classique
+                    updateSpotState();
+                } catch (err) {
+                    console.error('Erreur spawn naturel:', err);
                 }
             });
 
@@ -243,8 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const index = spotsData.findIndex(s => s.id === updatedSpot.id);
                     if (index !== -1) {
                         spotsData[index] = updatedSpot;
-                        // Met à jour la variable locale du spot pour que son intervalle indépendant prenne le relais
-                        spotsData[index].respawn_at = updatedSpot.respawn_at;
                     }
                 }
             )
