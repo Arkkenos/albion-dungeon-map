@@ -5,8 +5,7 @@ import {
     supabaseClient
 } from './db.js';
 
-// Petit log pour vérifier immédiatement dans la console F12 que le script s'exécute
-console.log("SCRIPT APP.JS CHARGÉ AVEC SUCCÈS !");
+console.log("SCRIPT APP.JS CHARGÉ !");
 
 document.addEventListener('DOMContentLoaded', () => {
     // Éléments DOM
@@ -39,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentZoom = 1;
     let spotsData = [];
     let realtimeChannel = null;
-    let timerInterval = null;
+    let activeIntervals = []; // Stocke les timers de chaque point pour les nettoyer si besoin
 
     // 1. Authentification Simple
     loginForm.addEventListener('submit', (e) => {
@@ -58,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appScreen.classList.add('hidden');
         loginScreen.classList.remove('hidden');
         passwordInput.value = '';
-        leaveRealtimeChannel();
+        cleanupMap();
     });
 
     // 2. Charger la liste des maps
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     backToMapsBtn.addEventListener('click', () => {
-        leaveRealtimeChannel();
+        cleanupMap();
         mapDetailView.classList.add('hidden');
         mapsListView.classList.remove('hidden');
     });
@@ -147,8 +146,16 @@ document.addEventListener('DOMContentLoaded', () => {
         mapWrapper.style.transform = `scale(${currentZoom})`;
     }
 
+    // Nettoyage des intervalles lors du changement de page
+    function cleanupMap() {
+        leaveRealtimeChannel();
+        activeIntervals.forEach(interval => clearInterval(interval));
+        activeIntervals = [];
+    }
+
     // 5. Charger et afficher les spots
     async function loadAndRenderSpots() {
+        cleanupMap();
         try {
             spotsData = await getSpotsByMap(currentMap.id);
         } catch (err) {
@@ -173,7 +180,33 @@ document.addEventListener('DOMContentLoaded', () => {
             timerLabel.className = 'spot-timer-label hidden';
             elem.appendChild(timerLabel);
 
-            // Clic sur un spot pour lancer un timer exact de 90 secondes (90000 ms)
+            // Fonction pour mettre à jour ce spot précis chaque seconde
+            const updateSpotState = () => {
+                const now = Date.now();
+                const respawnAt = Number(spot.respawn_at);
+
+                if (respawnAt && respawnAt > now) {
+                    const remainingMs = respawnAt - now;
+                    const remainingSeconds = Math.ceil(remainingMs / 1000);
+                    const mins = Math.floor(remainingSeconds / 60);
+                    const secs = remainingSeconds % 60;
+                    timerLabel.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    timerLabel.classList.remove('hidden');
+                    elem.classList.add('on-cooldown');
+                } else {
+                    timerLabel.classList.add('hidden');
+                    elem.classList.remove('on-cooldown');
+                }
+            };
+
+            // Lancer l'actualisation immédiate pour ce spot
+            updateSpotState();
+
+            // Créer une mini-boucle indépendante pour ce spot
+            const spotInterval = setInterval(updateSpotState, 1000);
+            activeIntervals.push(spotInterval);
+
+            // Clic sur un spot pour lancer un timer de 90 secondes (90000 ms)
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const respawnTimeMs = Date.now() + 90000;
@@ -181,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await updateSpotTimer(spot.id, respawnTimeMs);
                     spot.respawn_at = respawnTimeMs;
-                    updateSingleSpotDisplay(spot, elem);
+                    updateSpotState(); // Met à jour tout de suite au clic
                 } catch (err) {
                     console.error('Erreur lors du lancement du timer:', err);
                 }
@@ -189,48 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             spotsLayer.appendChild(elem);
         });
-
-        updateAllSpotsDisplay();
-        startGlobalTimerLoop();
-    }
-
-    // Met à jour l'affichage d'un spot individuel
-    function updateSingleSpotDisplay(spot, elem) {
-        const label = elem.querySelector('.spot-timer-label');
-        const now = Date.now();
-        const respawnAt = Number(spot.respawn_at);
-
-        if (respawnAt && respawnAt > now) {
-            const remainingMs = respawnAt - now;
-            const remainingSeconds = Math.ceil(remainingMs / 1000);
-            const mins = Math.floor(remainingSeconds / 60);
-            const secs = remainingSeconds % 60;
-            label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            label.classList.remove('hidden');
-            elem.classList.add('on-cooldown');
-        } else {
-            label.classList.add('hidden');
-            elem.classList.remove('on-cooldown');
-        }
-    }
-
-    // Met à jour tous les spots
-    function updateAllSpotsDisplay() {
-        spotsData.forEach(spot => {
-            const elem = Array.from(spotsLayer.children).find(el => el.dataset.id === String(spot.id));
-            if (elem) {
-                updateSingleSpotDisplay(spot, elem);
-            }
-        });
-    }
-
-    // Boucle globale de vérification et décompte dynamique
-    function startGlobalTimerLoop() {
-        if (timerInterval) clearInterval(timerInterval);
-
-        timerInterval = setInterval(() => {
-            updateAllSpotsDisplay();
-        }, 1000);
     }
 
     // 6. Synchronisation en Direct (Realtime Supabase)
@@ -252,10 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const index = spotsData.findIndex(s => s.id === updatedSpot.id);
                     if (index !== -1) {
                         spotsData[index] = updatedSpot;
-                        const elem = Array.from(spotsLayer.children).find(el => el.dataset.id === String(updatedSpot.id));
-                        if (elem) {
-                            updateSingleSpotDisplay(updatedSpot, elem);
-                        }
+                        // Met à jour la variable locale du spot pour que son intervalle indépendant prenne le relais
+                        spotsData[index].respawn_at = updatedSpot.respawn_at;
                     }
                 }
             )
@@ -266,10 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (realtimeChannel) {
             supabaseClient.removeChannel(realtimeChannel);
             realtimeChannel = null;
-        }
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
         }
     }
 });
