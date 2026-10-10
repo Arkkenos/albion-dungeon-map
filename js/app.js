@@ -170,16 +170,14 @@ document.addEventListener('DOMContentLoaded', () => {
             timerLabel.className = 'spot-timer-label hidden';
             elem.appendChild(timerLabel);
 
-            // Clic sur un spot pour lancer un timer de 1 min 30 (90 secondes)
+            // Clic sur un spot pour lancer un timer exact de 90 secondes (1m30) en millisecondes
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                // On utilise explicitement les secondes (Math.floor(Date.now() / 1000)) pour éviter les conflits de format
-                const nowSec = Math.floor(Date.now() / 1000);
-                const respawnTimeSec = nowSec + 90; // 90 secondes plus tard
+                const respawnTimeMs = Date.now() + (90 * 1000); // Temps actuel + 90 000 ms
 
                 try {
-                    await updateSpotTimer(spot.id, respawnTimeSec);
-                    spot.respawn_at = respawnTimeSec;
+                    await updateSpotTimer(spot.id, respawnTimeMs);
+                    spot.respawn_at = respawnTimeMs;
                     updateSingleSpotDisplay(spot, elem);
                 } catch (err) {
                     console.error('Erreur lors du lancement du timer:', err);
@@ -189,16 +187,20 @@ document.addEventListener('DOMContentLoaded', () => {
             spotsLayer.appendChild(elem);
         });
 
+        // Applique l'état initial des timers dès le chargement (pour garder l'info si on revient en arrière)
+        updateAllSpotsDisplay();
         startGlobalTimerLoop();
     }
 
-    // Fonction pour mettre à jour l'affichage d'un spot individuel
+    // Met à jour l'affichage d'un spot individuel
     function updateSingleSpotDisplay(spot, elem) {
         const label = elem.querySelector('.spot-timer-label');
-        const nowSec = Math.floor(Date.now() / 1000);
+        const now = Date.now();
+        const respawnAt = Number(spot.respawn_at);
 
-        if (spot.respawn_at && Number(spot.respawn_at) > nowSec) {
-            const remainingSeconds = Number(spot.respawn_at) - nowSec;
+        if (respawnAt && respawnAt > now) {
+            const remainingMs = respawnAt - now;
+            const remainingSeconds = Math.ceil(remainingMs / 1000);
             const mins = Math.floor(remainingSeconds / 60);
             const secs = remainingSeconds % 60;
             label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -210,16 +212,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Boucle globale pour actualiser l'affichage de tous les timers en direct chaque seconde
+    function updateAllSpotsDisplay() {
+        spotsData.forEach(spot => {
+            const elem = spotsLayer.querySelector(`[data-id='${spot.id}']`);
+            if (elem) {
+                updateSingleSpotDisplay(spot, elem);
+            }
+        });
+    }
+
+    // Boucle globale pour décompter chaque seconde en direct
     function startGlobalTimerLoop() {
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
-            spotsData.forEach(spot => {
-                const elem = spotsLayer.querySelector(`[data-id='${spot.id}']`);
-                if (!elem) return;
-                updateSingleSpotDisplay(spot, elem);
-            });
+            updateAllSpotsDisplay();
         }, 1000);
     }
 
@@ -242,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const index = spotsData.findIndex(s => s.id === updatedSpot.id);
                     if (index !== -1) {
                         spotsData[index] = updatedSpot;
-                        // Met à jour l'affichage immédiatement si l'élément est présent
                         const elem = spotsLayer.querySelector(`[data-id='${updatedSpot.id}']`);
                         if (elem) {
                             updateSingleSpotDisplay(updatedSpot, elem);
