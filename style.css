@@ -275,6 +275,18 @@ header h1 {
     pointer-events: none;
 }
 
+/* Style pour un spot spawn naturellement (rouge) */
+.dungeon-spot.natural-spawn {
+    background-color: #e74c3c !important; /* Rouge */
+    border-color: #c0392b !important;
+    box-shadow: 0 0 10px #e74c3c;
+}
+
+/* Optionnel : tu peux adapter le label si tu veux y afficher un texte ou un autre style */
+.dungeon-spot.natural-spawn .spot-timer-label {
+    color: #ff9999;
+}
+
 /* Footer ultra fin et discret */
 .map-footer {
     margin-top: 0.3rem;
