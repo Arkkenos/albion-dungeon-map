@@ -1,10 +1,8 @@
-// ⚠️ AJOUT : import des fonctions de db.js
 import {
     getMaps,
     getSpotsByMap,
-    addSpot,
-    updateSpotPosition,
-    deleteSpot
+    updateSpotTimer,
+    supabaseClient
 } from './db.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,18 +23,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const spotsLayer = document.getElementById('spots-layer');
     const spotsCount = document.getElementById('spots-count');
 
-    const modeBtn = document.getElementById('mode-btn');
     const backToMapsBtn = document.getElementById('back-to-maps-btn');
     const logoutBtn = document.getElementById('logout-btn');
 
-    const confirmModal = document.getElementById('confirm-modal');
-    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    // Zoom elements
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    const zoomResetBtn = document.getElementById('zoom-reset');
 
     // État de l'application
     let currentMap = null;
-    let isModificationMode = false;
-    let spotToDelete = null;
+    let currentZoom = 1;
+    let spotsData = [];
+    let realtimeChannel = null;
+    let timerInterval = null;
 
     // 1. Authentification Simple
     loginForm.addEventListener('submit', (e) => {
@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appScreen.classList.add('hidden');
         loginScreen.classList.remove('hidden');
         passwordInput.value = '';
+        leaveRealtimeChannel();
     });
 
     // 2. Charger la liste des maps
@@ -68,17 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erreur getMaps:', err);
         }
 
-        // Si la BDD est vide, proposer des zones par défaut (id unique !)
         if (!maps || maps.length === 0) {
             maps = [
-                { id: 1, name: 'N Steep',    image: 'maps/N Steep.jpg' },
+                { id: 1, name: 'N Steep',  image: 'maps/N Steep.jpg' },
                 { id: 2, name: 'NE Precipice', image: 'maps/NE Precipice.jpg' },
-                { id: 3, name: 'E Grove',    image: 'maps/E Grove.jpg' },
-                { id: 4, name: 'SE Dale',    image: 'maps/SE Dale.jpg' },
-                { id: 5, name: 'S Glade',    image: 'maps/S Glade.jpg' },
+                { id: 3, name: 'E Grove',  image: 'maps/E Grove.jpg' },
+                { id: 4, name: 'SE Dale',  image: 'maps/SE Dale.jpg' },
+                { id: 5, name: 'S Glade',  image: 'maps/S Glade.jpg' },
                 { id: 6, name: 'SW Enclave', image: 'maps/SW Enclave.jpg' },
-                { id: 7, name: 'W Strand',   image: 'maps/W Strand.jpg' },
-                { id: 8, name: 'NW Lake',    image: 'maps/NW Lake.jpg' }
+                { id: 7, name: 'W Strand',  image: 'maps/W Strand.jpg' },
+                { id: 8, name: 'NW Lake',  image: 'maps/NW Lake.jpg' }
             ];
         }
 
@@ -104,6 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMap = mapData;
         currentMapTitle.innerText = currentMap.name;
         mapImage.src = currentMap.image;
+        currentZoom = 1;
+        updateZoomTransform();
 
         mapImage.onerror = () => {
             mapImage.src = 'https://via.placeholder.com/1000x1000/151c28/e2b755?text=' + currentMap.name;
@@ -112,139 +114,141 @@ document.addEventListener('DOMContentLoaded', () => {
         mapsListView.classList.add('hidden');
         mapDetailView.classList.remove('hidden');
 
-        setMode(false);
-        await renderSpots();
+        await loadAndRenderSpots();
+        setupRealtimeSync();
     }
 
     backToMapsBtn.addEventListener('click', () => {
+        leaveRealtimeChannel();
         mapDetailView.classList.add('hidden');
         mapsListView.classList.remove('hidden');
     });
 
-    // 4. Gestion du Mode
-    modeBtn.addEventListener('click', () => {
-        setMode(!isModificationMode);
+    // 4. Gestion du Zoom
+    zoomInBtn.addEventListener('click', () => {
+        currentZoom = Math.min(currentZoom + 0.25, 3);
+        updateZoomTransform();
     });
 
-    function setMode(modification) {
-        isModificationMode = modification;
-        if (isModificationMode) {
-            modeBtn.innerText = 'MODE MODIFICATION';
-            modeBtn.className = 'btn-mode mode-modification';
-            mapWrapper.classList.add('mode-modification-active');
-        } else {
-            modeBtn.innerText = 'MODE CONSULTATION';
-            modeBtn.className = 'btn-mode mode-consultation';
-            mapWrapper.classList.remove('mode-modification-active');
-        }
+    zoomOutBtn.addEventListener('click', () => {
+        currentZoom = Math.max(currentZoom - 0.25, 1);
+        updateZoomTransform();
+    });
+
+    zoomResetBtn.addEventListener('click', () => {
+        currentZoom = 1;
+        updateZoomTransform();
+    });
+
+    function updateZoomTransform() {
+        mapWrapper.style.transform = `scale(${currentZoom})`;
     }
 
-    // 5. Afficher les spots
-    async function renderSpots() {
-        spotsLayer.innerHTML = '';
-        let spots = [];
+    // 5. Charger et afficher les spots
+    async function loadAndRenderSpots() {
         try {
-            spots = await getSpotsByMap(currentMap.id);
+            spotsData = await getSpotsByMap(currentMap.id);
         } catch (err) {
             console.error('Erreur getSpotsByMap:', err);
+            spotsData = [];
         }
-        spotsCount.innerText = `${spots.length} SPOTS CONNUS`;
-        spots.forEach(spot => createSpotElement(spot));
+        renderSpots();
     }
 
-    function createSpotElement(spot) {
-        const elem = document.createElement('div');
-        elem.className = 'dungeon-spot';
-        elem.style.left = `${spot.x}%`;
-        elem.style.top = `${spot.y}%`;
-        elem.title = `Spot Donjon (#${spot.id})`;
-        elem.dataset.id = spot.id;
+    function renderSpots() {
+        spotsLayer.innerHTML = '';
+        spotsCount.innerText = `${spotsData.length} SPOTS DE DONJONS`;
 
-        let isDragging = false;
+        spotsData.forEach(spot => {
+            const elem = document.createElement('div');
+            elem.className = 'dungeon-spot';
+            elem.style.left = `${spot.x}%`;
+            elem.style.top = `${spot.y}%`;
+            elem.dataset.id = spot.id;
 
-        elem.addEventListener('mousedown', (e) => {
-            if (!isModificationMode || e.button !== 0) return;
-            isDragging = true;
-            e.stopPropagation();
-        });
+            const timerLabel = document.createElement('div');
+            timerLabel.className = 'spot-timer-label hidden';
+            elem.appendChild(timerLabel);
 
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const rect = mapImage.getBoundingClientRect();
-            let x = ((e.clientX - rect.left) / rect.width) * 100;
-            let y = ((e.clientY - rect.top) / rect.height) * 100;
-            x = Math.max(0, Math.min(100, x));
-            y = Math.max(0, Math.min(100, y));
-            elem.style.left = `${x}%`;
-            elem.style.top = `${y}%`;
-        });
+            // Clic sur un spot pour lancer un timer de 1 min 30 (90 secondes)
+            elem.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const now = Date.now();
+                const respawnTime = now + 90 * 1000; // 90 secondes en millisecondes
 
-        window.addEventListener('mouseup', async () => {
-            if (isDragging) {
-                isDragging = false;
-                const x = parseFloat(elem.style.left);
-                const y = parseFloat(elem.style.top);
                 try {
-                    await updateSpotPosition(spot.id, x, y);
+                    await updateSpotTimer(spot.id, respawnTime);
+                    // La mise à jour sera répercutée pour tous via le Realtime Supabase
                 } catch (err) {
-                    console.error('Erreur updateSpotPosition:', err);
+                    console.error('Erreur lors du lancement du timer:', err);
                 }
-            }
+            });
+
+            spotsLayer.appendChild(elem);
         });
 
-        elem.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            if (!isModificationMode) return;
-            spotToDelete = { id: spot.id, element: elem };
-            confirmModal.classList.remove('hidden');
-        });
-
-        spotsLayer.appendChild(elem);
+        startGlobalTimerLoop();
     }
 
-    // 6. Ajout d'un spot au clic
-    mapWrapper.addEventListener('click', async (e) => {
-        if (!isModificationMode) return;
-        if (e.target.classList.contains('dungeon-spot')) return;
+    // Boucle globale pour actualiser l'affichage des timers visuels
+    function startGlobalTimerLoop() {
+        if (timerInterval) clearInterval(timerInterval);
 
-        const rect = mapImage.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        timerInterval = setInterval(() => {
+            const now = Date.now();
+            spotsData.forEach(spot => {
+                const elem = spotsLayer.querySelector(`[data-id='${spot.id}']`);
+                if (!elem) return;
+                const label = elem.querySelector('.spot-timer-label');
 
-        try {
-            const newSpot = await addSpot(currentMap.id, x.toFixed(3), y.toFixed(3));
-            if (newSpot) {
-                createSpotElement(newSpot);
-                spotsCount.innerText = `${spotsLayer.children.length} SPOTS CONNUS`;
-            }
-        } catch (err) {
-            console.error('Erreur addSpot:', err);
-            alert(
-                "Impossible d'ajouter le spot.\n\n" +
-                "Cause probable : la map (id=" + currentMap.id + ") n'existe pas dans la table 'maps' de Supabase.\n" +
-                "Va dans Supabase → SQL Editor et exécute :\n" +
-                "INSERT INTO maps (id, name) VALUES (" + currentMap.id + ", '" + currentMap.name + "');"
-            );
+                if (spot.respawn_at && spot.respawn_at > now) {
+                    const remainingSeconds = Math.ceil((spot.respawn_at - now) / 1000);
+                    const mins = Math.floor(remainingSeconds / 60);
+                    const secs = remainingSeconds % 60;
+                    label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    label.classList.remove('hidden');
+                    elem.classList.add('on-cooldown');
+                } else {
+                    label.classList.add('hidden');
+                    elem.classList.remove('on-cooldown');
+                }
+            });
+        }, 1000);
+    }
+
+    // 6. Synchronisation en Direct (Realtime Supabase)
+    function setupRealtimeSync() {
+        leaveRealtimeChannel();
+
+        realtimeChannel = supabaseClient
+            .channel(`public:spots:map_id=eq.${currentMap.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'spots',
+                    filter: `map_id=eq.${currentMap.id}`
+                },
+                (payload) => {
+                    const updatedSpot = payload.new;
+                    const index = spotsData.findIndex(s => s.id === updatedSpot.id);
+                    if (index !== -1) {
+                        spotsData[index] = updatedSpot;
+                    }
+                }
+            )
+            .subscribe();
+    }
+
+    function leaveRealtimeChannel() {
+        if (realtimeChannel) {
+            supabaseClient.removeChannel(realtimeChannel);
+            realtimeChannel = null;
         }
-    });
-
-    // 7. Modal de suppression
-    cancelDeleteBtn.addEventListener('click', () => {
-        confirmModal.classList.add('hidden');
-        spotToDelete = null;
-    });
-
-    confirmDeleteBtn.addEventListener('click', async () => {
-        if (spotToDelete) {
-            try {
-                await deleteSpot(spotToDelete.id);
-                spotToDelete.element.remove();
-            } catch (err) {
-                console.error('Erreur deleteSpot:', err);
-            }
-            spotToDelete = null;
-            confirmModal.classList.add('hidden');
-            spotsCount.innerText = `${spotsLayer.children.length} SPOTS CONNUS`;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
         }
-    });
+    }
 });
