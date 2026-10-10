@@ -5,6 +5,9 @@ import {
     supabaseClient
 } from './db.js';
 
+// Petit log pour vérifier immédiatement dans la console F12 que le script s'exécute
+console.log("SCRIPT APP.JS CHARGÉ AVEC SUCCÈS !");
+
 document.addEventListener('DOMContentLoaded', () => {
     // Éléments DOM
     const loginScreen = document.getElementById('login-screen');
@@ -221,12 +224,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Boucle globale de vérification
+    // Boucle globale de vérification et décompte dynamique
     function startGlobalTimerLoop() {
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
-            console.log("Boucle timer active, vérification des points..."); // <-- Regarde si ça s'affiche dans ta console F12 chaque seconde
             updateAllSpotsDisplay();
         }, 1000);
     }
