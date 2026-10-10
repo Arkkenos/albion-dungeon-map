@@ -2,7 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = 'https://tmphejgbudtvsssiihkm.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable__LRvhwJmwbtFjAgOZSfsgg_4oPLBiQ6'; // ⚠️ remplace par ta vraie clé
+const SUPABASE_ANON_KEY = 'sb_publishable__LRvhwJmwbtFjAgOZSfsgg_4oPLBiQ6';
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -24,31 +24,14 @@ export async function getSpotsByMap(mapId) {
     return data;
 }
 
-export async function addSpot(mapId, x, y) {
+// Met à jour l'heure de fin du timer pour un spot donné
+export async function updateSpotTimer(spotId, respawnTimestamp) {
     const { data, error } = await supabaseClient
         .from('spots')
-        .insert({ map_id: Number(mapId), x: Number(x), y: Number(y) })
-        .select()
-        .single();
-    if (error) throw error;
-    return data;
-}
-
-export async function updateSpotPosition(spotId, x, y) {
-    const { data, error } = await supabaseClient
-        .from('spots')
-        .update({ x: Number(x), y: Number(y) })
+        .update({ respawn_at: respawnTimestamp })
         .eq('id', spotId)
         .select()
         .single();
     if (error) throw error;
     return data;
-}
-
-export async function deleteSpot(spotId) {
-    const { error } = await supabaseClient
-        .from('spots')
-        .delete()
-        .eq('id', spotId);
-    if (error) throw error;
 }
