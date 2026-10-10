@@ -170,10 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
             timerLabel.className = 'spot-timer-label hidden';
             elem.appendChild(timerLabel);
 
-            // Clic sur un spot pour lancer un timer exact de 90 secondes (1m30) en millisecondes
+            // Clic sur un spot pour lancer un timer exact de 90 secondes (1m30)
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const respawnTimeMs = Date.now() + (90 * 1000); // Temps actuel + 90 000 ms
+                const respawnTimeMs = Date.now() + (90 * 1000);
 
                 try {
                     await updateSpotTimer(spot.id, respawnTimeMs);
@@ -187,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
             spotsLayer.appendChild(elem);
         });
 
-        // Applique l'état initial des timers dès le chargement (pour garder l'info si on revient en arrière)
         updateAllSpotsDisplay();
         startGlobalTimerLoop();
     }
@@ -212,16 +211,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Met à jour tous les spots en cherchant directement dans les éléments du DOM (évite le bug des UUIDs chiffrés)
     function updateAllSpotsDisplay() {
         spotsData.forEach(spot => {
-            const elem = spotsLayer.querySelector(`[data-id='${spot.id}']`);
+            const elem = Array.from(spotsLayer.children).find(el => el.dataset.id === String(spot.id));
             if (elem) {
                 updateSingleSpotDisplay(spot, elem);
             }
         });
     }
 
-    // Boucle globale pour décompter chaque seconde en direct
+    // Boucle globale pour décompter chaque seconde en direct live
     function startGlobalTimerLoop() {
         if (timerInterval) clearInterval(timerInterval);
 
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const index = spotsData.findIndex(s => s.id === updatedSpot.id);
                     if (index !== -1) {
                         spotsData[index] = updatedSpot;
-                        const elem = spotsLayer.querySelector(`[data-id='${updatedSpot.id}']`);
+                        const elem = Array.from(spotsLayer.children).find(el => el.dataset.id === String(updatedSpot.id));
                         if (elem) {
                             updateSingleSpotDisplay(updatedSpot, elem);
                         }
