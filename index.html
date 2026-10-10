@@ -10,7 +10,7 @@
 </head>
 <body>
 
-    <!-- Ecran de connexion par mot de passe -->
+    <!-- Écran de connexion par mot de passe -->
     <div id="login-screen" class="screen">
         <div class="login-box">
             <h1>ALBION DUNGEON MAP</h1>
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <!-- Interface Principale (Masquée avant connexion) -->
+    <!-- Interface Principale -->
     <div id="app-screen" class="screen hidden">
         
         <!-- Vue 1: Liste des Maps -->
@@ -48,37 +48,29 @@
             <header class="map-header">
                 <button id="back-to-maps-btn" class="btn-back">← MAPS</button>
                 <h2 id="current-map-title">PRECIPICE</h2>
-                <div class="mode-toggle-container">
-                    <button id="mode-btn" class="btn-mode mode-consultation">MODE CONSULTATION</button>
+                <div class="zoom-controls">
+                    <button id="zoom-in" class="btn-zoom">+</button>
+                    <button id="zoom-out" class="btn-zoom">-</button>
+                    <button id="zoom-reset" class="btn-zoom">Reset</button>
                 </div>
             </header>
 
             <main class="map-main">
-                <div id="map-wrapper" class="map-wrapper">
-                    <img id="map-image" src="" alt="Carte de zone" draggable="false">
-                    <div id="spots-layer"></div>
+                <div id="map-viewport" class="map-viewport">
+                    <div id="map-wrapper" class="map-wrapper">
+                        <img id="map-image" src="" alt="Carte de zone" draggable="false">
+                        <div id="spots-layer"></div>
+                    </div>
                 </div>
                 <footer class="map-footer">
-                    <span id="spots-count">0 SPOTS CONNUS</span>
+                    <span id="spots-count">0 SPOTS DE DONJONS</span>
                 </footer>
             </main>
         </div>
 
     </div>
 
-    <!-- Dialogue de confirmation de suppression -->
-    <div id="confirm-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Supprimer cet emplacement ?</h3>
-            <div class="modal-actions">
-                <button id="cancel-delete-btn" class="btn-secondary">ANNULER</button>
-                <button id="confirm-delete-btn" class="btn-danger">SUPPRIMER</button>
-            </div>
-        </div>
-    </div>
-
     <script src="js/config.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
