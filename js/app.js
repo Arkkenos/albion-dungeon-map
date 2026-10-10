@@ -174,11 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
             elem.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const now = Date.now();
-                const respawnTime = now + 90 * 1000; // 90 secondes en millisecondes
+                const respawnTime = now + 90 * 1000; // 90 secondes
 
                 try {
+                    // 1. Enregistrement dans Supabase
                     await updateSpotTimer(spot.id, respawnTime);
-                    // La mise à jour sera répercutée pour tous via le Realtime Supabase
+                    
+                    // 2. Mise à jour locale immédiate
+                    spot.respawn_at = respawnTime;
+                    
+                    // 3. Affichage instantané du timer sur le point
+                    const label = elem.querySelector('.spot-timer-label');
+                    const remainingSeconds = 90;
+                    const mins = Math.floor(remainingSeconds / 60);
+                    const secs = remainingSeconds % 60;
+                    label.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    label.classList.remove('hidden');
+                    elem.classList.add('on-cooldown');
                 } catch (err) {
                     console.error('Erreur lors du lancement du timer:', err);
                 }
